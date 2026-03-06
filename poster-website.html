@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PosterCraft - Customize Your Perfect Poster</title>
+    
+    <!-- Cropper.js CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 40px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: calc(100vh - 92px);
+        }
+
+        .preview-section {
+            flex: 2;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .control-section {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .room-preview {
+            width: 100%;
+            height: 600px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.6s ease;
+        }
+
+        /* Room backgrounds */
+        .room-background {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .living-room {
+            background: linear-gradient(180deg, #e8d5c4 0%, #d4b5a0 50%, #8b7355 100%);
+            position: relative;
+        }
+
+        .living-room::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(180deg, transparent 0%, rgba(101, 67, 33, 0.3) 100%);
+        }
+
+        .bedroom {
+            background: linear-gradient(180deg, #c4d5e8 0%, #a0b8d4 50%, #7a98b8 100%);
+        }
+
+        .office {
+            background: linear-gradient(180deg, #e0e0e0 0%, #b8b8b8 50%, #909090 100%);
+        }
+
+        .gallery {
+            background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 50%, #d0d0d0 100%);
+        }
+
+        .poster-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            background: white;
+            padding: 8px; /* Changed from 25px to 8px for a thinner frame */
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .poster-content {
+            height: 500px;
+            aspect-ratio: 210 / 297; /* Perfectly matches your crop ratio */
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+            border: 2px dashed #ddd;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .poster-content img,
+        .poster-content canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image fills the area without gaps */
+        }
+
+        /* Override to help CropperJS setup */
+        .poster-content img.cropper-hidden {
+            display: none !important;
+        }
+
+        .placeholder-text {
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .background-slider {
+            margin-top: 30px;
+        }
+
+        .slider-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .slider-container {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .background-option {
+            min-width: 120px;
+            height: 80px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .background-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .background-option.active {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .background-option span {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .upload-area.drag-over {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            font-size: 13px;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+            display: none;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .control-btn.secondary:hover {
+            background: #e0e0e0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 10;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .zoom-controls button {
+            flex: 1;
+        }
+
+        .crop-controls {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .crop-controls.active {
+            display: flex;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .preview-section, .control-section {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🎨 PosterCraft</div>
+    </header>
+
+    <div class="container">
+        <div class="preview-section">
+            <h2>Preview Your Poster</h2>
+            <div class="room-preview">
+                <div class="room-background living-room"></div>
+                <div class="poster-frame">
+                    <div class="poster-content" id="posterContent">
+                        <div class="placeholder-text">
+                            Upload your image<br>to see your poster here
+                        </div>
+                    </div>
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Changing background...</div>
+                </div>
+            </div>
+
+            <div class="background-slider">
+                <div class="slider-title">Choose Your Room Style</div>
+                <div class="slider-container">
+                    <div class="background-option living-room active" data-background="living-room">
+                        <span>Living Room</span>
+                    </div>
+                    <div class="background-option bedroom" data-background="bedroom">
+                        <span>Bedroom</span>
+                    </div>
+                    <div class="background-option office" data-background="office">
+                        <span>Office</span>
+                    </div>
+                    <div class="background-option gallery" data-background="gallery">
+                        <span>Gallery</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h2>Customize Your Poster</h2>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drag & Drop or Click to Upload</div>
+                <div class="upload-subtext">Supports JPG and PNG files</div>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png">
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <div>Selected file:</div>
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <div class="crop-controls" id="cropControls">
+                <div class="slider-title" style="font-size: 14px; margin-bottom: 5px; text-align: center;">Use mouse scroll to zoom, drag to pan</div>
+                <div class="zoom-controls">
+                    <button class="control-btn secondary" id="rotateLeft" title="Rotate Left">↺ Rotate Left</button>
+                    <button class="control-btn secondary" id="rotateRight" title="Rotate Right">↻ Rotate Right</button>
+                </div>
+                <button class="control-btn" id="applyCrop">✂️ Apply Crop</button>
+                <button class="control-btn secondary" id="cancelCrop">❌ Cancel</button>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn" id="cropMode">✂️ Crop & Zoom Image</button>
+                <button class="control-btn" id="downloadPoster" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📥 Download Poster</button>
+                <div class="zoom-controls">
+                    <button class="control-btn" id="zoomIn">🔍 Zoom In</button>
+                    <button class="control-btn" id="zoomOut">🔍 Zoom Out</button>
+                </div>
+                <button class="control-btn secondary" id="centerPoster">📍 Center Poster</button>
+                <div class="zoom-controls">
+                    <button class="control-btn secondary" id="resetPreview">🔄 Reset Preview</button>
+                    <button class="control-btn secondary" id="removeImage">🗑️ Remove Image</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cropper.js Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
+    <script>
+        // State management
+        let currentScale = 1;
+        let currentBackground = 'living-room';
+        let uploadedFile = null;
+        let isCropMode = false;
+        let originalImage = null; // Current working image (can be cropped)
+        let baseOriginalImage = null; // The absolute original, untouched uploaded image
+        let cropper = null; // CropperJS instance
+
+        // Default A-series aspect ratio (1:√2, roughly 210/297)
+        const posterAspectRatio = 210 / 297;
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const posterContent = document.getElementById('posterContent');
+        const posterFrame = document.querySelector('.poster-frame');
+        const roomBackground = document.querySelector('.room-background');
+        const loading = document.getElementById('loading');
+        const backgroundOptions = document.querySelectorAll('.background-option');
+        const cropControls = document.getElementById('cropControls');
+        const cropModeBtn = document.getElementById('cropMode');
+        const downloadPosterBtn = document.getElementById('downloadPoster');
+        const applyCropBtn = document.getElementById('applyCrop');
+        const cancelCropBtn = document.getElementById('cancelCrop');
+        const rotateLeftBtn = document.getElementById('rotateLeft');
+        const rotateRightBtn = document.getElementById('rotateRight');
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        // Handle file upload
+        function handleFile(file) {
+            if (!file) return;
+
+            const validTypes = ['image/jpeg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a valid JPG or PNG file.');
+                return;
+            }
+
+            // Cleanup existing cropper if loading new image
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+                exitCropMode();
+            }
+
+            uploadedFile = file;
+            baseOriginalImage = null; // Reset the base tracker
+            fileName.textContent = file.name;
+            fileInfo.classList.add('active');
+
+            renderImage(file);
+        }
+
+        // Render image
+        function renderImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage = e.target.result;
+                baseOriginalImage = e.target.result; // Store a copy of the pure original
+                posterContent.innerHTML = `<img src="${e.target.result}" id="mainPosterImage" alt="Poster">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Background switching
+        backgroundOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const background = option.dataset.background;
+                changeBackground(background);
+            });
+        });
+
+        function changeBackground(background) {
+            if (background === currentBackground) return;
+
+            loading.classList.add('active');
+
+            setTimeout(() => {
+                backgroundOptions.forEach(opt => opt.classList.remove('active'));
+                document.querySelector(`[data-background="${background}"]`).classList.add('active');
+                roomBackground.className = `room-background ${background}`;
+                currentBackground = background;
+                loading.classList.remove('active');
+            }, 500);
+        }
+
+        // Zoom controls (Handles both Cropper Zoom and Room View Zoom)
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            if (isCropMode && cropper) {
+                cropper.zoom(0.1); // Zoom image inside crop box
+            } else {
+                currentScale = Math.min(currentScale + 0.2, 2);
+                updatePosterScale(); // Zoom entire frame
+            }
+        });
+
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            if (isCropMode && cropper) {
+                cropper.zoom(-0.1); // Zoom out image inside crop box
+            } else {
+                currentScale = Math.max(currentScale - 0.2, 0.5);
+                updatePosterScale(); // Zoom out entire frame
+            }
+        });
+
+        function updatePosterScale() {
+            posterFrame.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+        }
+
+        // Center poster
+        document.getElementById('centerPoster').addEventListener('click', () => {
+            if (isCropMode && cropper) {
+                cropper.reset(); // Reset crop adjustments
+            } else {
+                posterFrame.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+            }
+        });
+
+        // Reset preview (Reverts to original uncropped image)
+        document.getElementById('resetPreview').addEventListener('click', () => {
+            currentScale = 1;
+            updatePosterScale();
+            
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            exitCropMode();
+
+            if (baseOriginalImage) {
+                // Restore the uncropped original image
+                originalImage = baseOriginalImage;
+                posterContent.innerHTML = `<img src="${baseOriginalImage}" id="mainPosterImage" alt="Poster">`;
+            } else {
+                // Fallback to clear if nothing was uploaded
+                document.getElementById('removeImage').click();
+            }
+        });
+
+        // Completely remove the image and start over
+        document.getElementById('removeImage').addEventListener('click', () => {
+            currentScale = 1;
+            updatePosterScale();
+            posterContent.innerHTML = `
+                <div class="placeholder-text">
+                    Upload your image<br>to see your poster here
+                </div>
+            `;
+            fileInfo.classList.remove('active');
+            fileInput.value = '';
+            uploadedFile = null;
+            originalImage = null;
+            baseOriginalImage = null;
+            
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            exitCropMode();
+        });
+
+        // Rotate Controls
+        rotateLeftBtn.addEventListener('click', () => {
+            if (cropper) cropper.rotate(-90);
+        });
+
+        rotateRightBtn.addEventListener('click', () => {
+            if (cropper) cropper.rotate(90);
+        });
+
+        // Crop mode toggle
+        cropModeBtn.addEventListener('click', () => {
+            if (!originalImage) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            const img = document.getElementById('mainPosterImage');
+            if (!img) return;
+
+            isCropMode = true;
+            cropControls.classList.add('active');
+            cropModeBtn.style.display = 'none';
+
+            // Initialize Cropper.js
+            cropper = new Cropper(img, {
+                aspectRatio: posterAspectRatio,
+                viewMode: 1, // Restrict the crop box to not exceed the size of the canvas
+                dragMode: 'move', // Allow moving the image itself
+                autoCropArea: 0.9, // Start with a large crop box
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+        });
+
+        // Apply crop
+        applyCropBtn.addEventListener('click', () => {
+            if (!cropper) return;
+            
+            // Get cropped canvas and convert to Image URL
+            // Uses the natural, full-resolution pixels of the original image
+            const canvas = cropper.getCroppedCanvas({
+                fillColor: '#fff', // Fills any zoomed-out empty space with white
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+            
+            // Export as lossless PNG for zero quality compromise
+            const croppedImageURL = canvas.toDataURL('image/png');
+            
+            // Cleanup Cropper instance
+            cropper.destroy();
+            cropper = null;
+            
+            // Update UI with the new cropped image
+            posterContent.innerHTML = `<img src="${croppedImageURL}" id="mainPosterImage" alt="Cropped Poster">`;
+            originalImage = croppedImageURL; // Update reference so subsequent crops act on this new image
+            
+            exitCropMode();
+        });
+
+        // Cancel crop
+        cancelCropBtn.addEventListener('click', () => {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            exitCropMode();
+        });
+
+        // Exit crop mode helper
+        function exitCropMode() {
+            isCropMode = false;
+            cropControls.classList.remove('active');
+            cropModeBtn.style.display = 'block';
+        }
+
+        // Download poster
+        downloadPosterBtn.addEventListener('click', () => {
+            if (!originalImage) {
+                alert('Please upload an image first!');
+                return;
+            }
+            
+            // Convert Data URL to Blob for memory-safe downloading of massive, high-res files
+            fetch(originalImage)
+                .then(res => res.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = 'my-high-res-poster.png';
+                    link.href = blobUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Free up memory
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+                })
+                .catch(err => {
+                    console.error('Download processing failed, falling back:', err);
+                    const link = document.createElement('a');
+                    link.download = 'my-high-res-poster.png';
+                    link.href = originalImage; 
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+        });
+    </script>
+</body>
+</html>
